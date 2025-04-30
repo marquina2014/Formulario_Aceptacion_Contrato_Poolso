@@ -4,12 +4,14 @@ import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import "./Form.css";
+import Loader from "../Componentes/Loader"; // Asegúrate de que este path es correcto
 
 const Form = () => {
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
   const [error, setError] = useState(null);
   const [guid, setGuid] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // loader activado
 
   useEffect(() => {
     const urlGuid = new URLSearchParams(window.location.search).get("guid");
@@ -54,9 +56,10 @@ const Form = () => {
   const sendDecision = async (decision) => {
     if (!guid) return;
 
-    const url = "https://prod-22.brazilsouth.logic.azure.com:443/workflows/cb8feb461cf645a48db8c060cdd6d84a/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y7PF_WAIvsTjdN4cQGaYMSh2eyovVxOI5OEjJ6Drk7k";
+    const url = "https://prod-22.brazilsouth.logic.azure.com:443/workflows/cb8feb461cf645a48db8c060cdd6d84a/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y7PF_WAIvsTjdN4cQGaYMSh2eyovVxOI5OEjJ6Drk7k&path=/submit_decision";
 
     try {
+      setIsLoading(true);
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,12 +74,15 @@ const Form = () => {
     } catch (err) {
       console.error("Error al enviar la decisión:", err);
       alert("Error al registrar la acción.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="form-page">
       <div className="form-box">
+        {isLoading && <Loader />}
         <h1 className="form-title">Contrato para firmar</h1>
 
         {error ? (
@@ -87,14 +93,16 @@ const Form = () => {
               <Viewer fileUrl={pdfBlobUrl} plugins={[defaultLayoutPluginInstance]} />
             </Worker>
 
-            <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
-              <button onClick={() => sendDecision("Aprobado")} className="btn btn-accept">
-                ✅ Firmar
-              </button>
-              <button onClick={() => sendDecision("Rechazado")} className="btn btn-reject">
-                ❌ Rechazar
-              </button>
-            </div>
+            {!isLoading && (
+              <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
+                <button onClick={() => sendDecision("Aprobado")} className="btn btn-accept">
+                  ✅ Firmar
+                </button>
+                <button onClick={() => sendDecision("Rechazado")} className="btn btn-reject">
+                  ❌ Rechazar
+                </button>
+              </div>
+            )}
           </>
         ) : (
           <p>Cargando documento...</p>
