@@ -4,14 +4,14 @@ import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import "./Form.css";
-import Loader from "../Componentes/Loader"; // Asegúrate de que este path es correcto
+import Loader from "../Componentes/Loader"; // Ajusta si tu ruta es distinta
 
 const Form = () => {
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null);
   const [error, setError] = useState(null);
   const [guid, setGuid] = useState("");
-  const [isLoading, setIsLoading] = useState(false); // loader activado
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const urlGuid = new URLSearchParams(window.location.search).get("guid");
@@ -23,6 +23,7 @@ const Form = () => {
 
     const fetchUrl = `https://prod-15.brazilsouth.logic.azure.com:443/workflows/4576876bfdaa477abee064656eb846b8/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=nxOt3YuHoH84-dfi4FrPhgRd8-mYKzg3UjyO7wHdTMo&guid=${urlGuid}`;
 
+    setIsLoading(true); // loader al comenzar
     fetch(fetchUrl)
       .then((res) => res.text())
       .then((base64) => {
@@ -50,32 +51,36 @@ const Form = () => {
       .catch((err) => {
         console.error("Error al cargar el PDF:", err);
         setError("Ocurrió un error al cargar el contrato.");
-      });
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const sendDecision = async (decision) => {
     if (!guid) return;
+    setIsLoading(true); // ← activa loader al enviar
 
-    const url = "https://prod-22.brazilsouth.logic.azure.com:443/workflows/cb8feb461cf645a48db8c060cdd6d84a/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y7PF_WAIvsTjdN4cQGaYMSh2eyovVxOI5OEjJ6Drk7k&path=/submit_decision";
+    const url =
+      "https://prod-22.brazilsouth.logic.azure.com:443/workflows/cb8feb461cf645a48db8c060cdd6d84a/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Y7PF_WAIvsTjdN4cQGaYMSh2eyovVxOI5OEjJ6Drk7k&path=/submit_decision";
 
     try {
-      setIsLoading(true);
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guid, estatus: decision }),
       });
 
-      if (res.ok) {
-        alert(`Contrato ${decision === "Aprobado" ? "aceptado" : "rechazado"}`);
-      } else {
+      if (!res.ok) {
         throw new Error("No se pudo enviar la decisión");
       }
+
+      // Esperamos medio segundo por estética y recargamos
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (err) {
       console.error("Error al enviar la decisión:", err);
       alert("Error al registrar la acción.");
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // solo en caso de fallo
     }
   };
 
@@ -105,7 +110,7 @@ const Form = () => {
             )}
           </>
         ) : (
-          <p>Cargando documento...</p>
+          !isLoading && <p>Cargando documento...</p>
         )}
       </div>
     </div>
@@ -113,3 +118,4 @@ const Form = () => {
 };
 
 export default Form;
+
