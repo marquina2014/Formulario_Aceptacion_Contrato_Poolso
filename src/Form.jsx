@@ -86,10 +86,14 @@ const Form = () => {
 
   return (
     <div className="form-page">
+      {isLoading && (
+        <div className="loader-overlay">
+          <Loader />
+        </div>
+      )}
       <div className="form-box">
-        {isLoading && <Loader />}
         <h1 className="form-title">Contrato para firmar</h1>
-
+  
         {error ? (
           <p style={{ color: "red" }}>{error}</p>
         ) : pdfBlobUrl ? (
@@ -97,7 +101,7 @@ const Form = () => {
             <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js">
               <Viewer fileUrl={pdfBlobUrl} plugins={[defaultLayoutPluginInstance]} />
             </Worker>
-
+  
             {!isLoading && (
               <div style={{ marginTop: "2rem", display: "flex", justifyContent: "center", gap: "1rem" }}>
                 <button onClick={() => sendDecision("Aprobado")} className="btn btn-accept">
