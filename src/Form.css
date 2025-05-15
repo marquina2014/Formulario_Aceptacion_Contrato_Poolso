@@ -77,3 +77,14 @@
   justify-content: center;
   align-items: center;
 }
+.submit-logo-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
+.logo-img {
+    width: 90px;
+    height: auto;
+    opacity: 0.9;
+}
